@@ -60,8 +60,8 @@ export default function InterviewSetupPage() {
         numQuestions: settingsWithExperience.numQuestions,
       });
       const sessionId = `session_${Date.now()}`;
+      // This action now sets the status to 'in_progress'
       dispatch({ type: 'QUESTIONS_GENERATED', payload: { questions: result.questions, sessionId } });
-      dispatch({ type: 'START_INTERVIEW' });
       router.push('/interview/active');
     } catch (error) {
       console.error("Failed to generate questions:", error);

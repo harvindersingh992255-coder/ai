@@ -41,7 +41,8 @@ export default function ActiveInterviewPage() {
   const enableVideo = plan !== 'Basic';
 
   useEffect(() => {
-    if (state.status === 'idle' || state.status === 'configuring' || state.status === 'generating_questions') {
+    // Redirect if the state is not appropriate for an active interview
+    if (state.status !== 'in_progress' && state.status !== 'generating_feedback' && state.status !== 'complete') {
       router.push('/interview/setup');
     }
   }, [state.status, router]);

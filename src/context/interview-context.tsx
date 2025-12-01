@@ -46,8 +46,10 @@ function interviewReducer(state: InterviewState, action: Action): InterviewState
     case 'SET_SETTINGS':
       return { ...state, settings: action.payload, status: 'generating_questions' };
     case 'QUESTIONS_GENERATED':
-      return { ...state, questions: action.payload.questions, sessionId: action.payload.sessionId };
+      // This action now also transitions to the correct status for starting.
+      return { ...state, questions: action.payload.questions, sessionId: action.payload.sessionId, status: 'in_progress' };
     case 'START_INTERVIEW':
+        // This is now mainly for retakes, ensuring the state is clean.
         return { ...state, status: 'in_progress', currentQuestionIndex: 0, userAnswers: [], feedback: [], bodyLanguageFeedback: [] };
     case 'SUBMIT_ANSWER':
       const newUserAnswers = [...state.userAnswers];
