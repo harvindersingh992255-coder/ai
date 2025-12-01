@@ -24,6 +24,8 @@ import {
   History,
   Database,
   Bell,
+  Sparkles,
+  Crown,
 } from 'lucide-react';
 import { Icons } from '@/components/icons';
 import { usePathname } from 'next/navigation';
@@ -35,14 +37,16 @@ import { ReactNode } from 'react';
 const mainNav = [
   { href: '/dashboard', label: 'Home', icon: Home },
   { href: '/interview/setup', label: 'Practice', icon: Play },
+  { href: '/coach', label: 'Coach', icon: Sparkles },
   { href: '/progress', label: 'Progress', icon: BarChart2 },
-  { href: '/resources', label: 'Resources', icon: Book },
   { href: '/profile', label: 'Profile', icon: User },
 ];
 
 const secondaryNav = [
   { href: '/history', label: 'Interview History', icon: History },
   { href: '/questions', label: 'Question Bank', icon: Database },
+  { href: '/subscriptions', label: 'Subscriptions', icon: Crown },
+  { href: '/resources', label: 'Resources', icon: Book },
 ];
 
 const helpNav = [

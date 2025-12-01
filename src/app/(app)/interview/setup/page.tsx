@@ -29,7 +29,7 @@ export default function InterviewSetupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { control, handleSubmit, watch } = useForm<InterviewSettings>({
     defaultValues: {
-      jobRole: 'Software Engineer',
+      dreamCompany: 'Google',
       industry: 'Technology',
       interviewType: 'general',
       difficulty: 5,
@@ -46,7 +46,7 @@ export default function InterviewSetupPage() {
     dispatch({ type: 'SET_SETTINGS', payload: data });
     try {
       const result = await generateInterviewQuestions({
-        jobRole: data.jobRole,
+        dreamCompany: data.dreamCompany,
         industry: data.industry,
         experienceLevel: data.experienceLevel,
         focusSkills: data.focusSkills,
@@ -75,12 +75,12 @@ export default function InterviewSetupPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="jobRole">Target Job Role</Label>
+                <Label htmlFor="dreamCompany">Dream Company</Label>
                  <Controller
-                  name="jobRole"
+                  name="dreamCompany"
                   control={control}
                   render={({ field }) => (
-                    <Input id="jobRole" placeholder="e.g. Senior Product Manager" {...field} />
+                    <Input id="dreamCompany" placeholder="e.g. Google, Netflix" {...field} />
                   )}
                 />
               </div>
