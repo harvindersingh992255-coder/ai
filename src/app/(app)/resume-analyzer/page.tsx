@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { UpgradePlan } from '@/components/upgrade-plan';
 import { useUser } from '@/context/user-context';
-import { FileSearch, Loader2, Wand2 } from 'lucide-react';
+import { FileSearch, Loader2, Wand2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import { analyzeResume, type AnalyzeResumeOutput, type AnalyzeResumeInput } from
 import { Separator } from '@/components/ui/separator';
 import { CircularProgress } from '@/components/ui/circular-progress';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 const FeedbackSection = ({ title, score, feedback }: { title: string; score: number; feedback: string; }) => (
   <div>
@@ -29,9 +30,35 @@ const FeedbackSection = ({ title, score, feedback }: { title: string; score: num
 
 export default function ResumeAnalyzerPage() {
   const { plan } = useUser();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalyzeResumeOutput | null>(null);
-  const { register, handleSubmit } = useForm<AnalyzeResumeInput>();
+  const { register, handleSubmit, setValue } = useForm<AnalyzeResumeInput>();
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.type === 'text/plain') {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const text = e.target?.result as string;
+          setValue('resumeText', text);
+          toast({
+            title: 'File loaded',
+            description: `${file.name} has been loaded into the text area.`,
+          });
+        };
+        reader.readAsText(file);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Invalid file type',
+          description: 'Please upload a .txt file.',
+        });
+      }
+    }
+  };
+
 
   const onSubmit = async (data: AnalyzeResumeInput) => {
     setIsLoading(true);
@@ -41,7 +68,11 @@ export default function ResumeAnalyzerPage() {
       setAnalysisResult(result);
     } catch (error) {
       console.error("Failed to analyze resume:", error);
-      // You could show a toast or error message here
+       toast({
+          variant: 'destructive',
+          title: "Analysis Failed",
+          description: "There was an error analyzing your resume. Please try again."
+      });
     }
     setIsLoading(false);
   };
@@ -59,7 +90,7 @@ export default function ResumeAnalyzerPage() {
             AI Resume Analyzer
           </CardTitle>
           <CardDescription>
-            Paste your resume and provide a target job to get instant AI-powered feedback.
+            Paste your resume, or upload a .txt file, and provide a target job to get instant AI-powered feedback.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -74,11 +105,21 @@ export default function ResumeAnalyzerPage() {
                 <Input id="industry" placeholder="e.g. SaaS, Fintech" {...register('industry', { required: true })} />
               </div>
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="resumeText">Paste Your Resume</Label>
+              <Label htmlFor="resume-upload" className="flex items-center justify-between">
+                <span>Paste Your Resume</span>
+                <Button asChild variant="outline" size="sm">
+                  <label>
+                    <Upload className="mr-2"/>
+                    Upload .txt file
+                    <input type="file" id="resume-upload" className="sr-only" accept=".txt" onChange={handleFileChange} />
+                  </label>
+                </Button>
+              </Label>
               <Textarea
                 id="resumeText"
-                placeholder="Paste the full text content of your resume here..."
+                placeholder="Paste the full text content of your resume here, or use the upload button."
                 className="min-h-[250px]"
                 {...register('resumeText', { required: true })}
               />
