@@ -12,6 +12,7 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import {
   Book,
   BarChart2,
@@ -35,37 +36,92 @@ import Link from 'next/link';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BottomNav } from '@/components/bottom-nav';
 import { ReactNode } from 'react';
+import { useUser } from '@/context/user-context';
+import type { Plan } from '@/lib/types';
 
-const mainNav = [
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  requiredPlan?: Plan;
+}
+
+const mainNav: NavItem[] = [
   { href: '/dashboard', label: 'Home', icon: Home },
   { href: '/interview/setup', label: 'Practice', icon: Play },
-  { href: '/coach', label: 'Coach', icon: Sparkles },
+  { href: '/coach', label: 'Coach', icon: Sparkles, requiredPlan: 'Premium' },
   { href: '/progress', label: 'Progress', icon: BarChart2 },
   { href: '/profile', label: 'Profile', icon: User },
 ];
 
-const secondaryNav = [
+const secondaryNav: NavItem[] = [
   { href: '/history', label: 'Interview History', icon: History },
   { href: '/questions', label: 'Question Bank', icon: Database },
-  { href: '/resume-analyzer', label: 'Resume Analyzer', icon: FileSearch },
-  { href: '/resume-builder', label: 'Resume Builder', icon: ClipboardList },
+  { href: '/resume-analyzer', label: 'Resume Analyzer', icon: FileSearch, requiredPlan: 'Super Pack' },
+  { href: '/resume-builder', label: 'Resume Builder', icon: ClipboardList, requiredPlan: 'Super Pack' },
   { href: '/subscriptions', label: 'Subscriptions', icon: Crown },
   { href: '/resources', label: 'Resources', icon: Book },
 ];
 
-const helpNav = [
+const helpNav: NavItem[] = [
   { href: '#', label: 'Notifications', icon: Bell },
   { href: '#', label: 'Help & Support', icon: HelpCircle },
   { href: '#', label: 'Settings', icon: Settings },
 ];
 
+const planHierarchy: Record<Plan, number> = {
+  'Basic': 0,
+  'Premium': 1,
+  'Super Pack': 2,
+};
+
 export function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isMobile = useIsMobile();
+  const { user, plan } = useUser();
+
+  const hasAccess = (requiredPlan?: Plan) => {
+    if (!requiredPlan) return true;
+    return planHierarchy[plan] >= planHierarchy[requiredPlan];
+  };
 
   const isActive = (href: string) => {
     return pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
   };
+  
+  const NavMenu = ({ items }: { items: NavItem[] }) => (
+     <SidebarMenu>
+        {items.map((item) => {
+          const canAccess = hasAccess(item.requiredPlan);
+          const linkContent = (
+            <SidebarMenuButton asChild isActive={isActive(item.href)} disabled={!canAccess}>
+              <span>
+                <item.icon />
+                <span>{item.label}</span>
+                {!canAccess && <Badge variant="destructive" className="ml-auto bg-yellow-500/80 text-black">Premium</Badge>}
+              </span>
+            </SidebarMenuButton>
+          );
+
+          if (canAccess) {
+            return (
+              <SidebarMenuItem key={item.label}>
+                <Link href={item.href} passHref>
+                  {linkContent}
+                </Link>
+              </SidebarMenuItem>
+            );
+          }
+          return (
+             <SidebarMenuItem key={item.label} className="cursor-not-allowed">
+              <Link href="/subscriptions" passHref>
+                {linkContent}
+              </Link>
+             </SidebarMenuItem>
+          )
+        })}
+      </SidebarMenu>
+  );
 
   return (
     <SidebarProvider>
@@ -77,49 +133,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarMenu>
-            {mainNav.map((item) => (
-              <SidebarMenuItem key={item.label}>
-                <Link href={item.href} passHref>
-                  <SidebarMenuButton asChild isActive={isActive(item.href)}>
-                    <span>
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </span>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
+          <NavMenu items={mainNav} />
           <SidebarMenu className="mt-4">
-             {secondaryNav.map((item) => (
-              <SidebarMenuItem key={item.label}>
-                <Link href={item.href} passHref>
-                  <SidebarMenuButton asChild isActive={isActive(item.href)}>
-                    <span>
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </span>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            ))}
+             <NavMenu items={secondaryNav} />
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-          <SidebarMenu>
-             {helpNav.map((item) => (
-              <SidebarMenuItem key={item.label}>
-                <Link href={item.href} passHref>
-                  <SidebarMenuButton asChild isActive={isActive(item.href)}>
-                    <span>
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </span>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            ))}
+           <NavMenu items={helpNav} />
             <SidebarMenuItem>
               <Link href="/" passHref>
                 <SidebarMenuButton asChild>
@@ -130,7 +150,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
-          </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
@@ -139,10 +158,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <SidebarTrigger />
             </div>
             <div className="flex items-center gap-4">
-                <span className="text-sm font-medium">John Doe</span>
+                <span className="text-sm font-medium">{user.name}</span>
                 <Avatar>
-                    <AvatarImage src="https://picsum.photos/seed/1/100/100" alt="User avatar" />
-                    <AvatarFallback>JD</AvatarFallback>
+                    <AvatarImage src={user.avatarUrl} alt="User avatar" />
+                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                 </Avatar>
             </div>
         </header>

@@ -1,6 +1,7 @@
 import { AppLayout } from '@/components/app-layout';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { InterviewProvider } from '@/context/interview-context';
+import { UserProvider } from '@/context/user-context';
 
 export default function AuthenticatedAppLayout({
   children,
@@ -8,11 +9,13 @@ export default function AuthenticatedAppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <InterviewProvider>
-      <AppLayout>
-        {children}
-        <FirebaseErrorListener />
-      </AppLayout>
-    </InterviewProvider>
+    <UserProvider>
+      <InterviewProvider>
+        <AppLayout>
+          {children}
+          <FirebaseErrorListener />
+        </AppLayout>
+      </InterviewProvider>
+    </UserProvider>
   );
 }

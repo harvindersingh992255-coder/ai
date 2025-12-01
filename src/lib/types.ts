@@ -1,3 +1,10 @@
+export type Plan = 'Basic' | 'Premium' | 'Super Pack';
+
+export type User = {
+    name: string;
+    avatarUrl: string;
+};
+
 export type InterviewSettings = {
   dreamCompany: string;
   industry: string;

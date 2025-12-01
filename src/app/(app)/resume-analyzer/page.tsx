@@ -1,7 +1,17 @@
+'use client';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { UpgradePlan } from '@/components/upgrade-plan';
+import { useUser } from '@/context/user-context';
 import { FileSearch } from 'lucide-react';
 
 export default function ResumeAnalyzerPage() {
+  const { plan } = useUser();
+
+  if (plan !== 'Super Pack') {
+    return <UpgradePlan featureName="AI Resume Analyzer" requiredPlan="Super Pack" />;
+  }
+
   return (
     <div className="container mx-auto">
       <Card>

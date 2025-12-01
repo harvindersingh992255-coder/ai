@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, Zap } from 'lucide-react';
+import { useUser } from '@/context/user-context';
+import { UpgradePlan } from '@/components/upgrade-plan';
 
 const affirmations = [
   "You are capable of amazing things.",
@@ -17,12 +19,17 @@ const affirmations = [
 ];
 
 export default function CoachPage() {
+  const { plan } = useUser();
   const [affirmation, setAffirmation] = useState('Click the button to get a confidence boost!');
 
   const getNewAffirmation = () => {
     const newAffirmation = affirmations[Math.floor(Math.random() * affirmations.length)];
     setAffirmation(newAffirmation);
   };
+
+  if (plan === 'Basic') {
+    return <UpgradePlan featureName="AI Confidence Coach" />;
+  }
 
   return (
     <div className="container mx-auto flex items-center justify-center min-h-full">

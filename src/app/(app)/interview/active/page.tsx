@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useInterviewState, useInterviewDispatch } from '@/context/interview-context';
+import { useUser } from '@/context/user-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -22,6 +23,7 @@ const SpeechRecognition =
 export default function ActiveInterviewPage() {
   const state = useInterviewState();
   const dispatch = useInterviewDispatch();
+  const { plan } = useUser();
   const router = useRouter();
 
   const [isRecording, setIsRecording] = useState(false);
@@ -35,6 +37,8 @@ export default function ActiveInterviewPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoChunksRef = useRef<Blob[]>([]);
+
+  const enableVideo = plan !== 'Basic';
 
   useEffect(() => {
     if (state.status !== 'in_progress') {
@@ -50,12 +54,14 @@ export default function ActiveInterviewPage() {
   useEffect(() => {
     async function setupMedia() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: enableVideo });
         setMediaStream(stream);
         setHasMicPermission(true);
-        setHasCameraPermission(true);
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+        if (enableVideo) {
+          setHasCameraPermission(true);
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
         }
       } catch (err) {
         console.error("Error accessing media devices.", err);
@@ -77,7 +83,7 @@ export default function ActiveInterviewPage() {
       mediaRecorderRef.current?.stop();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [enableVideo]);
   
   const startRecordingAndListening = () => {
     if (mediaStream && SpeechRecognition) {
@@ -85,14 +91,16 @@ export default function ActiveInterviewPage() {
       setTranscript('');
       videoChunksRef.current = [];
 
-      // Start video recording
-      mediaRecorderRef.current = new MediaRecorder(mediaStream, { mimeType: 'video/webm' });
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          videoChunksRef.current.push(event.data);
-        }
-      };
-      mediaRecorderRef.current.start();
+      // Start video recording if enabled
+      if (enableVideo) {
+        mediaRecorderRef.current = new MediaRecorder(mediaStream, { mimeType: 'video/webm' });
+        mediaRecorderRef.current.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            videoChunksRef.current.push(event.data);
+          }
+        };
+        mediaRecorderRef.current.start();
+      }
       
       // Start speech recognition
       recognitionRef.current = new SpeechRecognition();
@@ -115,7 +123,7 @@ export default function ActiveInterviewPage() {
         // Only submit if we were actually recording and this wasn't an accidental stop
         if (isRecording) {
             setIsRecording(false);
-            const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
+            const videoBlob = enableVideo ? new Blob(videoChunksRef.current, { type: 'video/webm' }) : null;
             // Prioritize written answer if available
             const answerToSubmit = writtenAnswer.trim() || finalTranscript;
             dispatch({ type: 'SUBMIT_ANSWER', payload: { transcript: answerToSubmit, videoBlob: videoBlob } });
@@ -141,7 +149,7 @@ export default function ActiveInterviewPage() {
     } else {
         // If not recording, but there is a written answer, submit it.
         if (writtenAnswer.trim()) {
-            const videoBlob = videoChunksRef.current.length > 0 ? new Blob(videoChunksRef.current, { type: 'video/webm' }) : null;
+            const videoBlob = (enableVideo && videoChunksRef.current.length > 0) ? new Blob(videoChunksRef.current, { type: 'video/webm' }) : null;
             dispatch({ type: 'SUBMIT_ANSWER', payload: { transcript: writtenAnswer, videoBlob } });
         }
     }
@@ -160,7 +168,7 @@ export default function ActiveInterviewPage() {
       stopRecordingAndListening();
     } else {
       if (writtenAnswer.trim() && !state.userAnswers[state.currentQuestionIndex]) {
-        const videoBlob = videoChunksRef.current.length > 0 ? new Blob(videoChunksRef.current, { type: 'video/webm' }) : null;
+        const videoBlob = (enableVideo && videoChunksRef.current.length > 0) ? new Blob(videoChunksRef.current, { type: 'video/webm' }) : null;
         dispatch({ type: 'SUBMIT_ANSWER', payload: { transcript: writtenAnswer, videoBlob } });
       }
     }
@@ -177,7 +185,7 @@ export default function ActiveInterviewPage() {
             let verbalFeedback = null;
             
             try {
-              if (answer.videoBlob) {
+              if (enableVideo && answer.videoBlob) {
                 const videoDataUri = await blobToDataURI(answer.videoBlob);
                 bodyLanguageAnalysisResult = await analyzeBodyLanguage({ videoDataUri, question });
               }
@@ -250,26 +258,28 @@ export default function ActiveInterviewPage() {
           </CardContent>
         </Card>
         <div className="flex flex-col gap-4">
-          {(!hasMicPermission || !hasCameraPermission) && (
+          {(!hasMicPermission || (enableVideo && !hasCameraPermission)) && (
             <Alert variant="destructive">
-              { !hasCameraPermission ? <VideoOff className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+              { enableVideo && !hasCameraPermission ? <VideoOff className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
               <AlertTitle>Permissions Required</AlertTitle>
               <AlertDescription>
-                Please enable microphone and camera permissions in your browser settings to record your answers.
+                Please enable microphone {enableVideo && 'and camera'} permissions in your browser settings to record your answers.
               </AlertDescription>
             </Alert>
           )}
-          <Card className="flex-1 flex flex-col">
-             <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  Your Video
-                  {isRecording && <div className="flex items-center gap-2 text-destructive"><span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span></span> REC</div>}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 flex items-center justify-center bg-secondary/20 rounded-md">
-                 <video ref={videoRef} className="w-full aspect-video rounded-md" autoPlay muted />
-              </CardContent>
-          </Card>
+          {enableVideo && (
+            <Card className="flex-1 flex flex-col">
+              <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    Your Video
+                    {isRecording && <div className="flex items-center gap-2 text-destructive"><span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span></span> REC</div>}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 flex items-center justify-center bg-secondary/20 rounded-md">
+                  <video ref={videoRef} className="w-full aspect-video rounded-md" autoPlay muted />
+                </CardContent>
+            </Card>
+          )}
         </div>
       </div>
       <Card className="mt-4">
@@ -286,7 +296,7 @@ export default function ActiveInterviewPage() {
           <TabsContent value="record">
             <CardContent>
                <div className="flex items-center gap-4">
-                 <Button size="lg" onClick={isRecording ? stopRecordingAndListening : startRecordingAndListening} disabled={!hasMicPermission || !hasCameraPermission}>
+                 <Button size="lg" onClick={isRecording ? stopRecordingAndListening : startRecordingAndListening} disabled={!hasMicPermission || (enableVideo && !hasCameraPermission)}>
                     {isRecording ? <><StopCircle className="mr-2" /> Stop</> : <><Mic className="mr-2" /> Record Answer</>}
                   </Button>
                   <div className="text-sm text-muted-foreground min-h-[40px] flex-1 flex items-center">
