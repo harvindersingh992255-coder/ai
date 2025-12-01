@@ -33,23 +33,26 @@ export default function InterviewSetupPage() {
       industry: 'Technology',
       interviewType: 'general',
       difficulty: 5,
-      experienceLevel: 2,
+      experienceLevel: 2, // This will be updated, but we keep it for the AI flow
       focusSkills: '',
     },
   });
 
   const difficultyValue = watch('difficulty');
-  const experienceValue = watch('experienceLevel');
 
   const onSubmit = async (data: InterviewSettings) => {
     setIsLoading(true);
-    dispatch({ type: 'SET_SETTINGS', payload: data });
+    // We can map difficulty to experience level for the AI
+    const mappedExperience = Math.ceil(data.difficulty / 2);
+    const settingsWithExperience = { ...data, experienceLevel: mappedExperience };
+
+    dispatch({ type: 'SET_SETTINGS', payload: settingsWithExperience });
     try {
       const result = await generateInterviewQuestions({
-        dreamCompany: data.dreamCompany,
-        industry: data.industry,
-        experienceLevel: data.experienceLevel,
-        focusSkills: data.focusSkills,
+        dreamCompany: settingsWithExperience.dreamCompany,
+        industry: settingsWithExperience.industry,
+        experienceLevel: settingsWithExperience.experienceLevel,
+        focusSkills: settingsWithExperience.focusSkills,
         numQuestions: 8
       });
       const sessionId = `session_${Date.now()}`;
@@ -104,61 +107,43 @@ export default function InterviewSetupPage() {
               </div>
             </div>
             
-            <div className="space-y-2">
-              <Label>Interview Type</Label>
-               <Controller
-                name="interviewType"
-                control={control}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select interview type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="general">General</SelectItem>
-                      <SelectItem value="behavioral">Behavioral</SelectItem>
-                      <SelectItem value="technical">Technical</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="experienceLevel">Years of Experience: {experienceValue}</Label>
+                <Label>Interview Type</Label>
                 <Controller
-                  name="experienceLevel"
+                  name="interviewType"
                   control={control}
-                  render={({ field: { onChange, value } }) => (
-                    <Slider
-                      id="experienceLevel"
-                      min={0}
-                      max={20}
-                      step={1}
-                      defaultValue={[value]}
-                      onValueChange={(vals) => onChange(vals[0])}
-                    />
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select interview type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="general">General</SelectItem>
+                        <SelectItem value="behavioral">Behavioral</SelectItem>
+                        <SelectItem value="technical">Technical</SelectItem>
+                      </SelectContent>
+                    </Select>
                   )}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="difficulty">Difficulty Level: {difficultyValue}/10</Label>
-                <Controller
-                  name="difficulty"
-                  control={control}
-                  render={({ field: { onChange, value } }) => (
-                    <Slider
-                      id="difficulty"
-                      min={1}
-                      max={10}
-                      step={1}
-                      defaultValue={[value]}
-                      onValueChange={(vals) => onChange(vals[0])}
-                    />
-                  )}
-                />
-              </div>
+                  <Label htmlFor="difficulty">Difficulty Level: {difficultyValue}/10</Label>
+                  <Controller
+                    name="difficulty"
+                    control={control}
+                    render={({ field: { onChange, value } }) => (
+                      <Slider
+                        id="difficulty"
+                        min={1}
+                        max={10}
+                        step={1}
+                        defaultValue={[value]}
+                        onValueChange={(vals) => onChange(vals[0])}
+                      />
+                    )}
+                  />
+                </div>
             </div>
 
             <div className="space-y-2">
