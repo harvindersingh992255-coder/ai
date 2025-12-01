@@ -16,9 +16,23 @@ export type InterviewQuestion = {
 };
 
 export type AIFeedback = {
-  score: number;
-  strengths: string;
-  weaknesses: string;
+  overallScore: number;
+  clarityAndConciseness: {
+    score: number;
+    feedback: string;
+  };
+  contentRelevance: {
+    score: number;
+    feedback: string;
+  };
+  starMethodUsage: {
+    score: number;
+    feedback: string;
+  };
+  impactAndResults: {
+    score: number;
+    feedback: string;
+  };
   recommendations: string;
 };
 

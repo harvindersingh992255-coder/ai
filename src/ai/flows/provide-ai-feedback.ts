@@ -16,16 +16,30 @@ const ProvideAiFeedbackInputSchema = z.object({
   industry: z.string().describe('The industry of the company.'),
   jobRole: z.string().describe('The target job role for the user.'),
   question: z.string().describe('The interview question asked.'),
-  answer: z.string().describe('The user\'s answer to the interview question.'),
+  answer: z.string().describe("The user's answer to the interview question."),
   bodyLanguageAnalysis: z.string().optional().describe('The analysis of the candidate\'s body language during the answer.'),
 });
 export type ProvideAiFeedbackInput = z.infer<typeof ProvideAiFeedbackInputSchema>;
 
 const ProvideAiFeedbackOutputSchema = z.object({
-  score: z.number().describe('An overall score for the answer, out of 100.'),
-  strengths: z.string().describe('A summary of the strengths demonstrated in the answer.'),
-  weaknesses: z.string().describe('A summary of the weaknesses in the answer.'),
-  recommendations: z.string().describe('Specific recommendations for improving the answer.'),
+  overallScore: z.number().describe('An overall score for the answer, out of 100.'),
+  clarityAndConciseness: z.object({
+    score: z.number().describe('Score from 0 to 100 for clarity and conciseness.'),
+    feedback: z.string().describe('Feedback on the clarity and conciseness of the answer.'),
+  }),
+  contentRelevance: z.object({
+    score: z.number().describe('Score from 0 to 100 for content relevance.'),
+    feedback: z.string().describe('Feedback on how relevant the answer was to the question and the job role.'),
+  }),
+  starMethodUsage: z.object({
+    score: z.number().describe('Score from 0 to 100 for STAR method usage (Situation, Task, Action, Result).'),
+    feedback: z.string().describe('Feedback on the application of the STAR method. If not applicable, state that.'),
+  }),
+  impactAndResults: z.object({
+    score: z.number().describe('Score from 0 to 100 for demonstrating impact and results.'),
+    feedback: z.string().describe('Feedback on how well the candidate highlighted the impact and results of their actions.'),
+  }),
+  recommendations: z.string().describe('A summary of overall strengths, weaknesses, and actionable recommendations for improvement.'),
 });
 export type ProvideAiFeedbackOutput = z.infer<typeof ProvideAiFeedbackOutputSchema>;
 
@@ -37,26 +51,34 @@ const prompt = ai.definePrompt({
   name: 'provideAiFeedbackPrompt',
   input: {schema: ProvideAiFeedbackInputSchema},
   output: {schema: ProvideAiFeedbackOutputSchema},
-  prompt: `You are an AI-powered interview coach providing feedback on interview answers.
+  prompt: `You are an AI-powered interview coach providing detailed feedback on an interview answer.
 
-  Evaluate the candidate's answer to the following question for a {{jobRole}} role at {{dreamCompany}} in the {{industry}} industry:
+  **Candidate's Context:**
+  - **Target Role:** {{jobRole}}
+  - **Company:** {{dreamCompany}}
+  - **Industry:** {{industry}}
 
-  Question: {{question}}
-  Answer: {{answer}}
+  **Interview Question:**
+  "{{question}}"
+
+  **Candidate's Answer:**
+  "{{answer}}"
 
   {{#if bodyLanguageAnalysis}}
-  Here is an analysis of their body language:
+  **Body Language Analysis:**
   {{bodyLanguageAnalysis}}
   {{/if}}
 
-  Provide feedback according to the following guidelines:
+  **Your Task:**
+  Evaluate the answer based on the following five parameters. Provide a score from 0-100 and specific feedback for each of the first four parameters. For the final parameter, provide a summary of recommendations.
 
-  1.  Assign an overall score out of 100, considering the relevance, clarity, and completeness of the answer.
-  2.  Identify the strengths demonstrated in the answer.
-  3.  Point out the weaknesses in the answer.
-  4.  Provide specific and actionable recommendations for improvement.
+  1.  **Clarity & Conciseness:** Was the answer clear, well-structured, and to the point? Or was it rambling and hard to follow?
+  2.  **Content Relevance:** Was the answer relevant to the question asked and tailored to the {{jobRole}} role at {{dreamCompany}}? Did it demonstrate the right skills?
+  3.  **STAR Method Usage:** (For behavioral questions) Did the candidate effectively use the STAR method (Situation, Task, Action, Result)? Evaluate the structure. If the question isn't behavioral, state that this isn't applicable.
+  4.  **Impact & Results:** Did the candidate effectively quantify their achievements and demonstrate the impact of their actions?
+  5.  **Recommendations:** Based on all of the above, provide a summary of the candidate's main strengths and weaknesses, followed by specific, actionable recommendations for improvement.
 
-  Format your response as a JSON object.
+  Format your entire response as a single JSON object matching the output schema.
   `,
 });
 
