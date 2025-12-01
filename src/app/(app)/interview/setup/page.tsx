@@ -61,6 +61,7 @@ export default function InterviewSetupPage() {
       });
       const sessionId = `session_${Date.now()}`;
       dispatch({ type: 'QUESTIONS_GENERATED', payload: { questions: result.questions, sessionId } });
+      dispatch({ type: 'START_INTERVIEW' });
       router.push('/interview/active');
     } catch (error) {
       console.error("Failed to generate questions:", error);
