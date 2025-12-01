@@ -11,6 +11,8 @@ import { analyzeBodyLanguage } from '@/ai/flows/analyze-body-language';
 import { Mic, MicOff, Loader2, StopCircle, AudioLines, Video, VideoOff } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { blobToDataURI } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 // SpeechRecognition API might be prefixed
@@ -24,6 +26,7 @@ export default function ActiveInterviewPage() {
 
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const [writtenAnswer, setWrittenAnswer] = useState('');
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [hasMicPermission, setHasMicPermission] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
@@ -75,7 +78,7 @@ export default function ActiveInterviewPage() {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
+  
   const startRecordingAndListening = () => {
     if (mediaStream && SpeechRecognition) {
       setIsRecording(true);
@@ -113,7 +116,9 @@ export default function ActiveInterviewPage() {
         if (isRecording) {
             setIsRecording(false);
             const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
-            dispatch({ type: 'SUBMIT_ANSWER', payload: { transcript: finalTranscript, videoBlob: videoBlob } });
+            // Prioritize written answer if available
+            const answerToSubmit = writtenAnswer.trim() || finalTranscript;
+            dispatch({ type: 'SUBMIT_ANSWER', payload: { transcript: answerToSubmit, videoBlob: videoBlob } });
         }
       };
       recognitionRef.current.start();
@@ -133,11 +138,18 @@ export default function ActiveInterviewPage() {
   const handleNext = () => {
     if (isRecording) {
         stopRecordingAndListening();
+    } else {
+        // If not recording, but there is a written answer, submit it.
+        if (writtenAnswer.trim()) {
+            const videoBlob = videoChunksRef.current.length > 0 ? new Blob(videoChunksRef.current, { type: 'video/webm' }) : null;
+            dispatch({ type: 'SUBMIT_ANSWER', payload: { transcript: writtenAnswer, videoBlob } });
+        }
     }
     
     if (state.currentQuestionIndex < state.questions.length - 1) {
         dispatch({ type: 'NEXT_QUESTION' });
         setTranscript('');
+        setWrittenAnswer('');
     } else {
         handleEndInterview();
     }
@@ -146,6 +158,11 @@ export default function ActiveInterviewPage() {
   const handleEndInterview = async () => {
     if(isRecording) {
       stopRecordingAndListening();
+    } else {
+      if (writtenAnswer.trim() && !state.userAnswers[state.currentQuestionIndex]) {
+        const videoBlob = videoChunksRef.current.length > 0 ? new Blob(videoChunksRef.current, { type: 'video/webm' }) : null;
+        dispatch({ type: 'SUBMIT_ANSWER', payload: { transcript: writtenAnswer, videoBlob } });
+      }
     }
     dispatch({ type: 'START_FEEDBACK_GENERATION' });
 
@@ -256,24 +273,46 @@ export default function ActiveInterviewPage() {
         </div>
       </div>
       <Card className="mt-4">
-         <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              Your Answer
-              {isRecording && <AudioLines className="w-5 h-5 text-primary animate-pulse" />}
-            </CardTitle>
+        <Tabs defaultValue="record" className="w-full">
+          <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Your Answer</CardTitle>
+                <TabsList>
+                  <TabsTrigger value="record">Record</TabsTrigger>
+                  <TabsTrigger value="write">Write</TabsTrigger>
+                </TabsList>
+              </div>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground min-h-[60px]">
-              {isRecording 
-                  ? transcript || "Listening..." 
-                  : lastAnswer || "Press record to start answering."}
-            </p>
-          </CardContent>
+          <TabsContent value="record">
+            <CardContent>
+               <div className="flex items-center gap-4">
+                 <Button size="lg" onClick={isRecording ? stopRecordingAndListening : startRecordingAndListening} disabled={!hasMicPermission || !hasCameraPermission}>
+                    {isRecording ? <><StopCircle className="mr-2" /> Stop</> : <><Mic className="mr-2" /> Record Answer</>}
+                  </Button>
+                  <div className="text-sm text-muted-foreground min-h-[40px] flex-1 flex items-center">
+                    {isRecording && <AudioLines className="w-5 h-5 text-primary animate-pulse mr-2" />}
+                    <span>
+                      {isRecording 
+                          ? transcript || "Listening..." 
+                          : lastAnswer || "Press record to start answering."}
+                    </span>
+                  </div>
+               </div>
+            </CardContent>
+          </TabsContent>
+          <TabsContent value="write">
+              <CardContent>
+                <Textarea 
+                  placeholder="Type your answer here..."
+                  value={writtenAnswer}
+                  onChange={(e) => setWrittenAnswer(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              </CardContent>
+          </TabsContent>
+        </Tabs>
       </Card>
       <div className="flex justify-center items-center gap-4 py-4">
-        <Button size="lg" onClick={isRecording ? stopRecordingAndListening : startRecordingAndListening} disabled={!hasMicPermission || !hasCameraPermission}>
-          {isRecording ? <><StopCircle className="mr-2" /> Stop</> : <><Mic className="mr-2" /> Record Answer</>}
-        </Button>
         <Button size="lg" variant="outline" onClick={handleNext} disabled={isRecording}>
             {state.currentQuestionIndex < state.questions.length - 1 ? 'Next Question' : 'Finish & Get Feedback'}
         </Button>
