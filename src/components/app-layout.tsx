@@ -26,6 +26,8 @@ import {
   Bell,
   Sparkles,
   Crown,
+  FileSearch,
+  ClipboardList,
 } from 'lucide-react';
 import { Icons } from '@/components/icons';
 import { usePathname } from 'next/navigation';
@@ -45,6 +47,8 @@ const mainNav = [
 const secondaryNav = [
   { href: '/history', label: 'Interview History', icon: History },
   { href: '/questions', label: 'Question Bank', icon: Database },
+  { href: '/resume-analyzer', label: 'Resume Analyzer', icon: FileSearch },
+  { href: '/resume-builder', label: 'Resume Builder', icon: ClipboardList },
   { href: '/subscriptions', label: 'Subscriptions', icon: Crown },
   { href: '/resources', label: 'Resources', icon: Book },
 ];
