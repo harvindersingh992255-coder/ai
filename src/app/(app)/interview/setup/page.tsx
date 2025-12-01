@@ -33,12 +33,14 @@ export default function InterviewSetupPage() {
       industry: 'Technology',
       interviewType: 'general',
       difficulty: 5,
+      numQuestions: 5,
       experienceLevel: 2, // This will be updated, but we keep it for the AI flow
       focusSkills: '',
     },
   });
 
   const difficultyValue = watch('difficulty');
+  const numQuestionsValue = watch('numQuestions');
 
   const onSubmit = async (data: InterviewSettings) => {
     setIsLoading(true);
@@ -53,7 +55,7 @@ export default function InterviewSetupPage() {
         industry: settingsWithExperience.industry,
         experienceLevel: settingsWithExperience.experienceLevel,
         focusSkills: settingsWithExperience.focusSkills,
-        numQuestions: 8
+        numQuestions: settingsWithExperience.numQuestions,
       });
       const sessionId = `session_${Date.now()}`;
       dispatch({ type: 'QUESTIONS_GENERATED', payload: { questions: result.questions, sessionId } });
@@ -108,7 +110,7 @@ export default function InterviewSetupPage() {
             </div>
             
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
+               <div className="space-y-2">
                 <Label>Interview Type</Label>
                 <Controller
                   name="interviewType"
@@ -128,22 +130,40 @@ export default function InterviewSetupPage() {
                 />
               </div>
               <div className="space-y-2">
-                  <Label htmlFor="difficulty">Difficulty Level: {difficultyValue}/10</Label>
-                  <Controller
-                    name="difficulty"
-                    control={control}
-                    render={({ field: { onChange, value } }) => (
-                      <Slider
-                        id="difficulty"
-                        min={1}
-                        max={10}
-                        step={1}
-                        defaultValue={[value]}
-                        onValueChange={(vals) => onChange(vals[0])}
-                      />
-                    )}
+                <Label htmlFor="difficulty">Difficulty Level: {difficultyValue}/10</Label>
+                <Controller
+                  name="difficulty"
+                  control={control}
+                  render={({ field: { onChange, value } }) => (
+                    <Slider
+                      id="difficulty"
+                      min={1}
+                      max={10}
+                      step={1}
+                      defaultValue={[value]}
+                      onValueChange={(vals) => onChange(vals[0])}
+                    />
+                  )}
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="numQuestions">Interview Length: {numQuestionsValue} questions</Label>
+              <Controller
+                name="numQuestions"
+                control={control}
+                render={({ field: { onChange, value } }) => (
+                  <Slider
+                    id="numQuestions"
+                    min={3}
+                    max={10}
+                    step={1}
+                    defaultValue={[value]}
+                    onValueChange={(vals) => onChange(vals[0])}
                   />
-                </div>
+                )}
+              />
             </div>
 
             <div className="space-y-2">

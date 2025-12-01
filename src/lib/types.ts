@@ -5,6 +5,7 @@ export type InterviewSettings = {
   difficulty: number;
   experienceLevel: number;
   focusSkills?: string;
+  numQuestions: number;
 };
 
 export type InterviewQuestion = {
