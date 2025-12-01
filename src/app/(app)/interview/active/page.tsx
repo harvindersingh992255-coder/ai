@@ -153,6 +153,7 @@ export default function ActiveInterviewPage() {
           const aiFeedback = await provideAiFeedback({
             dreamCompany: settings.dreamCompany,
             industry: settings.industry,
+            jobRole: settings.jobRole,
             question,
             answer: answer.transcript,
             bodyLanguageAnalysis: bodyLanguageAnalysisText

@@ -14,6 +14,7 @@ import {z} from 'genkit';
 const GenerateInterviewQuestionsInputSchema = z.object({
   dreamCompany: z.string().describe('The dream company for which interview questions should be generated.'),
   industry: z.string().describe('The industry related to the job role.'),
+  jobRole: z.string().describe('The target job role for the user.'),
   experienceLevel: z.number().describe('The user\'s years of experience.'),
   focusSkills: z.string().optional().describe('Specific skills the user wants to focus on.'),
   numQuestions: z.number().default(5).describe('The number of questions to generate'),
@@ -33,7 +34,7 @@ const generateInterviewQuestionsPrompt = ai.definePrompt({
   name: 'generateInterviewQuestionsPrompt',
   input: {schema: GenerateInterviewQuestionsInputSchema},
   output: {schema: GenerateInterviewQuestionsOutputSchema},
-  prompt: `You are an expert career coach specializing in helping candidates prepare for job interviews. Generate a list of {{{numQuestions}}} interview questions for a role at {{{dreamCompany}}} in the {{{industry}}} industry.
+  prompt: `You are an expert career coach specializing in helping candidates prepare for job interviews. Generate a list of {{{numQuestions}}} interview questions for a {{{jobRole}}} role at {{{dreamCompany}}} in the {{{industry}}} industry.
 
 The candidate has {{{experienceLevel}}} years of experience.
 {{#if focusSkills}}

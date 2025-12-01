@@ -14,6 +14,7 @@ import {z} from 'genkit';
 const ProvideAiFeedbackInputSchema = z.object({
   dreamCompany: z.string().describe('The dream company for which the interview is being conducted.'),
   industry: z.string().describe('The industry of the company.'),
+  jobRole: z.string().describe('The target job role for the user.'),
   question: z.string().describe('The interview question asked.'),
   answer: z.string().describe('The user\'s answer to the interview question.'),
   bodyLanguageAnalysis: z.string().optional().describe('The analysis of the candidate\'s body language during the answer.'),
@@ -38,7 +39,7 @@ const prompt = ai.definePrompt({
   output: {schema: ProvideAiFeedbackOutputSchema},
   prompt: `You are an AI-powered interview coach providing feedback on interview answers.
 
-  Evaluate the candidate's answer to the following question for a role at {{dreamCompany}} in the {{industry}} industry:
+  Evaluate the candidate's answer to the following question for a {{jobRole}} role at {{dreamCompany}} in the {{industry}} industry:
 
   Question: {{question}}
   Answer: {{answer}}

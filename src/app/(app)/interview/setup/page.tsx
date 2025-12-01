@@ -31,6 +31,7 @@ export default function InterviewSetupPage() {
     defaultValues: {
       dreamCompany: 'Google',
       industry: 'Technology',
+      jobRole: 'Software Engineer',
       interviewType: 'general',
       difficulty: 5,
       numQuestions: 5,
@@ -53,6 +54,7 @@ export default function InterviewSetupPage() {
       const result = await generateInterviewQuestions({
         dreamCompany: settingsWithExperience.dreamCompany,
         industry: settingsWithExperience.industry,
+        jobRole: settingsWithExperience.jobRole,
         experienceLevel: settingsWithExperience.experienceLevel,
         focusSkills: settingsWithExperience.focusSkills,
         numQuestions: settingsWithExperience.numQuestions,
@@ -91,6 +93,18 @@ export default function InterviewSetupPage() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="jobRole">Target Job Role</Label>
+                 <Controller
+                  name="jobRole"
+                  control={control}
+                  render={({ field }) => (
+                    <Input id="jobRole" placeholder="e.g. Frontend Developer" {...field} />
+                  )}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
                 <Label>Industry</Label>
                  <Controller
                   name="industry"
@@ -107,7 +121,6 @@ export default function InterviewSetupPage() {
                   )}
                 />
               </div>
-            </div>
             
             <div className="grid md:grid-cols-2 gap-6">
                <div className="space-y-2">

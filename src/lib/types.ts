@@ -1,6 +1,7 @@
 export type InterviewSettings = {
   dreamCompany: string;
   industry: string;
+  jobRole: string;
   interviewType: 'behavioral' | 'technical' | 'general';
   difficulty: number;
   experienceLevel: number;
