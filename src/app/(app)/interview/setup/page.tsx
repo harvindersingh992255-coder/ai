@@ -1,0 +1,160 @@
+'use client';
+
+import { useInterviewDispatch } from '@/context/interview-context';
+import { useRouter } from 'next/navigation';
+import { generateInterviewQuestions } from '@/ai/flows/generate-interview-questions';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useForm, Controller } from 'react-hook-form';
+import type { InterviewSettings } from '@/lib/types';
+import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
+
+const jobRoles = ["Software Engineer", "Product Manager", "UX/UI Designer", "Data Scientist", "Marketing Associate"];
+const industries = ["Technology", "Finance", "Healthcare", "E-commerce", "Education"];
+
+export default function InterviewSetupPage() {
+  const dispatch = useInterviewDispatch();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const { control, handleSubmit, watch } = useForm<InterviewSettings>({
+    defaultValues: {
+      jobRole: 'Software Engineer',
+      industry: 'Technology',
+      interviewType: 'general',
+      difficulty: 5,
+    },
+  });
+
+  const difficultyValue = watch('difficulty');
+
+  const onSubmit = async (data: InterviewSettings) => {
+    setIsLoading(true);
+    dispatch({ type: 'SET_SETTINGS', payload: data });
+    try {
+      const result = await generateInterviewQuestions({
+        jobRole: data.jobRole,
+        industry: data.industry,
+        numQuestions: 8
+      });
+      const sessionId = `session_${Date.now()}`;
+      dispatch({ type: 'QUESTIONS_GENERATED', payload: { questions: result.questions, sessionId } });
+      router.push('/interview/active');
+    } catch (error) {
+      console.error("Failed to generate questions:", error);
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to generate questions.' });
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="container mx-auto max-w-2xl">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">Set Up Your Mock Interview</CardTitle>
+          <CardDescription>
+            Customize your practice session to match your career goals.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-2">
+              <Label>Target Job Role</Label>
+              <Controller
+                name="jobRole"
+                control={control}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a job role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {jobRoles.map(role => <SelectItem key={role} value={role}>{role}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Industry</Label>
+               <Controller
+                name="industry"
+                control={control}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select an industry" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {industries.map(industry => <SelectItem key={industry} value={industry}>{industry}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Interview Type</Label>
+               <Controller
+                name="interviewType"
+                control={control}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select interview type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="behavioral">Behavioral</SelectItem>
+                      <SelectItem value="technical">Technical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="difficulty">Difficulty Level: {difficultyValue}/10</Label>
+              <Controller
+                name="difficulty"
+                control={control}
+                render={({ field: { onChange, value } }) => (
+                  <Slider
+                    id="difficulty"
+                    min={1}
+                    max={10}
+                    step={1}
+                    defaultValue={[value]}
+                    onValueChange={(vals) => onChange(vals[0])}
+                  />
+                )}
+              />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating Questions...
+                </>
+              ) : (
+                'Start Interview'
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

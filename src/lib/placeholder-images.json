@@ -1,3 +1,46 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "user-avatar-1",
+      "description": "User avatar placeholder 1",
+      "imageUrl": "https://images.unsplash.com/photo-1599566147214-ce487862ea4f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc2NDUxOTc4Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person face"
+    },
+    {
+      "id": "user-avatar-2",
+      "description": "User avatar placeholder 2",
+      "imageUrl": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyc29uJTIwc21pbGluZ3xlbnwwfHx8fDE3NjQ1Njk4MzF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person smiling"
+    },
+    {
+      "id": "user-avatar-3",
+      "description": "User avatar placeholder 3",
+      "imageUrl": "https://images.unsplash.com/photo-1609505848912-b7c3b8b4beda?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc2NDU3Mzc4MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman portrait"
+    },
+    {
+      "id": "dashboard-hero",
+      "description": "Hero image for dashboard",
+      "imageUrl": "https://images.unsplash.com/photo-1704652070195-61e76e1466db?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxvZmZpY2UlMjB0ZWFtd29ya3xlbnwwfHx8fDE3NjQ0Nzk0Nzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "office teamwork"
+    },
+    {
+      "id": "resource-thumb-1",
+      "description": "Thumbnail for a resource article",
+      "imageUrl": "https://images.unsplash.com/photo-1629934266257-69467879efa7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxkZXNrJTIwc2V0dXB8ZW58MHx8fHwxNzY0NTc3OTA2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "desk setup"
+    },
+    {
+      "id": "resource-thumb-2",
+      "description": "Thumbnail for a resource article",
+      "imageUrl": "https://images.unsplash.com/photo-1582137490248-c53207ec5602?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyc29uJTIwd3JpdGluZ3xlbnwwfHx8fDE3NjQ1MDgxOTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person writing"
+    },
+    {
+      "id": "resource-thumb-3",
+      "description": "Thumbnail for a resource article",
+      "imageUrl": "https://images.unsplash.com/photo-1762968269894-1d7e1ce8894e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwcmVzZW50YXRpb24lMjBjb25mZXJlbmNlfGVufDB8fHx8MTc2NDU5MTAyMHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "presentation conference"
+    }
+  ]
 }
