@@ -19,9 +19,9 @@ import { useForm, Controller } from 'react-hook-form';
 import type { InterviewSettings } from '@/lib/types';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 
-const jobRoles = ["Software Engineer", "Product Manager", "UX/UI Designer", "Data Scientist", "Marketing Associate"];
-const industries = ["Technology", "Finance", "Healthcare", "E-commerce", "Education"];
+const industries = ["Technology", "Finance", "Healthcare", "E-commerce", "Education", "Marketing", "Consulting"];
 
 export default function InterviewSetupPage() {
   const dispatch = useInterviewDispatch();
@@ -33,10 +33,13 @@ export default function InterviewSetupPage() {
       industry: 'Technology',
       interviewType: 'general',
       difficulty: 5,
+      experienceLevel: 2,
+      focusSkills: '',
     },
   });
 
   const difficultyValue = watch('difficulty');
+  const experienceValue = watch('experienceLevel');
 
   const onSubmit = async (data: InterviewSettings) => {
     setIsLoading(true);
@@ -45,6 +48,8 @@ export default function InterviewSetupPage() {
       const result = await generateInterviewQuestions({
         jobRole: data.jobRole,
         industry: data.industry,
+        experienceLevel: data.experienceLevel,
+        focusSkills: data.focusSkills,
         numQuestions: 8
       });
       const sessionId = `session_${Date.now()}`;
@@ -68,40 +73,35 @@ export default function InterviewSetupPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-2">
-              <Label>Target Job Role</Label>
-              <Controller
-                name="jobRole"
-                control={control}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a job role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {jobRoles.map(role => <SelectItem key={role} value={role}>{role}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="jobRole">Target Job Role</Label>
+                 <Controller
+                  name="jobRole"
+                  control={control}
+                  render={({ field }) => (
+                    <Input id="jobRole" placeholder="e.g. Senior Product Manager" {...field} />
+                  )}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label>Industry</Label>
-               <Controller
-                name="industry"
-                control={control}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select an industry" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {industries.map(industry => <SelectItem key={industry} value={industry}>{industry}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
+              <div className="space-y-2">
+                <Label>Industry</Label>
+                 <Controller
+                  name="industry"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select an industry" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {industries.map(industry => <SelectItem key={industry} value={industry}>{industry}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
             </div>
             
             <div className="space-y-2">
@@ -124,25 +124,57 @@ export default function InterviewSetupPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="difficulty">Difficulty Level: {difficultyValue}/10</Label>
-              <Controller
-                name="difficulty"
-                control={control}
-                render={({ field: { onChange, value } }) => (
-                  <Slider
-                    id="difficulty"
-                    min={1}
-                    max={10}
-                    step={1}
-                    defaultValue={[value]}
-                    onValueChange={(vals) => onChange(vals[0])}
-                  />
-                )}
-              />
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="experienceLevel">Years of Experience: {experienceValue}</Label>
+                <Controller
+                  name="experienceLevel"
+                  control={control}
+                  render={({ field: { onChange, value } }) => (
+                    <Slider
+                      id="experienceLevel"
+                      min={0}
+                      max={20}
+                      step={1}
+                      defaultValue={[value]}
+                      onValueChange={(vals) => onChange(vals[0])}
+                    />
+                  )}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="difficulty">Difficulty Level: {difficultyValue}/10</Label>
+                <Controller
+                  name="difficulty"
+                  control={control}
+                  render={({ field: { onChange, value } }) => (
+                    <Slider
+                      id="difficulty"
+                      min={1}
+                      max={10}
+                      step={1}
+                      defaultValue={[value]}
+                      onValueChange={(vals) => onChange(vals[0])}
+                    />
+                  )}
+                />
+              </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <div className="space-y-2">
+              <Label htmlFor="focusSkills">Skills to Focus On (Optional)</Label>
+              <Controller
+                  name="focusSkills"
+                  control={control}
+                  render={({ field }) => (
+                    <Textarea id="focusSkills" placeholder="e.g. System Design, Leadership, React, Go-to-market strategy..." {...field} />
+                  )}
+                />
+              <p className="text-xs text-muted-foreground">Separate skills with commas.</p>
+            </div>
+
+
+            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

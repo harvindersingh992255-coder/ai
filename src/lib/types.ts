@@ -3,6 +3,8 @@ export type InterviewSettings = {
   industry: string;
   interviewType: 'behavioral' | 'technical' | 'general';
   difficulty: number;
+  experienceLevel: number;
+  focusSkills?: string;
 };
 
 export type InterviewQuestion = {
