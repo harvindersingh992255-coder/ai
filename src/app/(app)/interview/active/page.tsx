@@ -41,15 +41,18 @@ export default function ActiveInterviewPage() {
   const enableVideo = plan !== 'Basic';
 
   useEffect(() => {
-    if (state.status !== 'in_progress') {
-       // Allow access from results page for retake
-      if (state.status === 'complete' && state.sessionId) {
-        dispatch({ type: 'START_INTERVIEW' });
-      } else {
-        router.push('/interview/setup');
-      }
+    // Only redirect if setup is not complete and it's not a retake
+    if (state.status !== 'in_progress' && !(state.status === 'complete' && state.sessionId)) {
+      router.push('/interview/setup');
     }
-  }, [state.status, router, dispatch, state.sessionId]);
+  }, [state.status, router, state.sessionId]);
+
+  useEffect(() => {
+    // This effect is specifically for the 'retake' scenario from the results page
+    if (state.status === 'complete' && state.sessionId) {
+      dispatch({ type: 'START_INTERVIEW' });
+    }
+  }, [state.status, state.sessionId, dispatch]);
 
   useEffect(() => {
     async function setupMedia() {
@@ -330,3 +333,5 @@ export default function ActiveInterviewPage() {
     </div>
   );
 }
+
+    
