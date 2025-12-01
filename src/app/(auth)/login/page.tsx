@@ -48,7 +48,7 @@ export default function LoginPage() {
             </div>
             <Input id="password" type="password" />
           </div>
-          <Link href="/dashboard" passHref>
+          <Link href="/profile/setup" passHref>
             <Button type="submit" className="w-full">
               Login
             </Button>

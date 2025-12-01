@@ -3,6 +3,10 @@ export type Plan = 'Basic' | 'Premium' | 'Super Pack';
 export type User = {
     name: string;
     avatarUrl: string;
+    degree?: string;
+    fieldOfStudy?: string;
+    yearsOfExperience?: number;
+    keySkills?: string;
 };
 
 export type InterviewSettings = {

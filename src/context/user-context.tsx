@@ -10,6 +10,7 @@ const defaultUser: User = {
 
 type UserContextType = {
   user: User;
+  setUser: Dispatch<SetStateAction<User>>;
   plan: Plan;
   setPlan: Dispatch<SetStateAction<Plan>>;
 };
@@ -17,11 +18,11 @@ type UserContextType = {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user] = useState<User>(defaultUser);
+  const [user, setUser] = useState<User>(defaultUser);
   const [plan, setPlan] = useState<Plan>('Basic');
 
   return (
-    <UserContext.Provider value={{ user, plan, setPlan }}>
+    <UserContext.Provider value={{ user, setUser, plan, setPlan }}>
       {children}
     </UserContext.Provider>
   );
