@@ -41,11 +41,12 @@ export default function ActiveInterviewPage() {
   const enableVideo = plan !== 'Basic';
 
   useEffect(() => {
-    // Only redirect if setup is not complete and it's not a retake
-    if (state.status !== 'in_progress' && !(state.status === 'complete' && state.sessionId)) {
+    // Redirect if the state is not appropriate for an active interview
+    if (state.status !== 'in_progress' && state.status !== 'generating_feedback' && state.status !== 'complete') {
       router.push('/interview/setup');
     }
-  }, [state.status, router, state.sessionId]);
+  }, [state.status, router]);
+
 
   useEffect(() => {
     // This effect is specifically for the 'retake' scenario from the results page
