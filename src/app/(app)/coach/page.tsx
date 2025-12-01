@@ -28,7 +28,7 @@ export default function CoachPage() {
   };
 
   if (plan === 'Basic') {
-    return <UpgradePlan featureName="AI Confidence Coach" />;
+    return <UpgradePlan featureName="AI Confidence Coach" requiredPlan="Premium" />;
   }
 
   return (

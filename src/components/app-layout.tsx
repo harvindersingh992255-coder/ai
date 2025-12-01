@@ -98,7 +98,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <span>
                 <item.icon />
                 <span>{item.label}</span>
-                {!canAccess && <Badge variant="destructive" className="ml-auto bg-yellow-500/80 text-black">Premium</Badge>}
+                {!canAccess && <Badge variant="destructive" className="ml-auto bg-yellow-500/80 text-black">Upgrade</Badge>}
               </span>
             </SidebarMenuButton>
           );
@@ -168,7 +168,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-secondary/50 min-h-[calc(100vh-65px)]">
             {children}
         </main>
-        {isMobile && <BottomNav navItems={mainNav} isActive={isActive} />}
+        {isMobile && <BottomNav navItems={mainNav} isActive={isActive} hasAccess={hasAccess} />}
       </SidebarInset>
     </SidebarProvider>
   );
