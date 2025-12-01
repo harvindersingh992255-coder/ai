@@ -1,6 +1,21 @@
+
+'use client';
+
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Crown, Star } from 'lucide-react';
+import { Check, Crown, QrCode, Star } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+import Image from 'next/image';
 
 const plans = [
   {
@@ -79,10 +94,39 @@ export default function SubscriptionsPage() {
                 ))}
               </ul>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex-col items-stretch gap-2">
               <Button className="w-full" variant={plan.isPopular ? 'default' : 'outline'}>
                 {plan.price === 'Free' ? 'Start for Free' : 'Choose Plan'}
               </Button>
+              {plan.price !== 'Free' && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button className="w-full" variant="secondary">
+                      <QrCode className="mr-2" /> Pay with QR
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Scan to Pay for {plan.name} Plan</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Use your favorite UPI app to scan the QR code below and complete the payment for {plan.price}.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="flex justify-center p-4">
+                      <Image 
+                        src="https://placehold.co/200x200.png?text=Scan+to+Pay" 
+                        alt={`QR Code for ${plan.name} plan`}
+                        width={200}
+                        height={200}
+                        className="rounded-lg" 
+                      />
+                    </div>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Close</AlertDialogCancel>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </CardFooter>
           </Card>
         ))}
