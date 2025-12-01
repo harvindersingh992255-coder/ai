@@ -7,8 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { provideAiFeedback } from '@/ai/flows/provide-ai-feedback';
+import { analyzeBodyLanguage } from '@/ai/flows/analyze-body-language';
 import { Mic, MicOff, Loader2, StopCircle, AudioLines, Video, VideoOff } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { blobToDataURI } from '@/lib/utils';
+
 
 // SpeechRecognition API might be prefixed
 const SpeechRecognition =
@@ -64,7 +67,10 @@ export default function ActiveInterviewPage() {
 
     return () => {
       mediaStream?.getTracks().forEach(track => track.stop());
-      recognitionRef.current?.stop();
+      if (recognitionRef.current) {
+        recognitionRef.current.onend = null;
+        recognitionRef.current.stop();
+      }
       mediaRecorderRef.current?.stop();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,7 +83,7 @@ export default function ActiveInterviewPage() {
       videoChunksRef.current = [];
 
       // Start video recording
-      mediaRecorderRef.current = new MediaRecorder(mediaStream);
+      mediaRecorderRef.current = new MediaRecorder(mediaStream, { mimeType: 'video/webm' });
       mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data.size > 0) {
           videoChunksRef.current.push(event.data);
@@ -146,29 +152,44 @@ export default function ActiveInterviewPage() {
     // Use a timeout to ensure final answer is processed by reducer
     setTimeout(async () => {
         const feedbackPromises = state.userAnswers.map(async (answer, index) => {
-            if (!answer || !answer.transcript) return null;
+            if (!answer || (!answer.transcript && !answer.videoBlob)) return null;
+
             const question = state.questions[index];
             const settings = state.settings!;
+            let bodyLanguageAnalysisResult = null;
+            let verbalFeedback = null;
             
             try {
-              const aiFeedback = await provideAiFeedback({
-                dreamCompany: settings.dreamCompany,
-                industry: settings.industry,
-                jobRole: settings.jobRole,
-                question,
-                answer: answer.transcript,
-              });
-              return { aiFeedback, bodyLanguage: null }; // No body language feedback yet
+              if (answer.videoBlob) {
+                const videoDataUri = await blobToDataURI(answer.videoBlob);
+                bodyLanguageAnalysisResult = await analyzeBodyLanguage({ videoDataUri, question });
+              }
+
+              const bodyLanguageSummary = bodyLanguageAnalysisResult?.overallAnalysis;
+              
+              if (answer.transcript) {
+                verbalFeedback = await provideAiFeedback({
+                  dreamCompany: settings.dreamCompany,
+                  industry: settings.industry,
+                  jobRole: settings.jobRole,
+                  question,
+                  answer: answer.transcript,
+                  bodyLanguageAnalysis: bodyLanguageSummary,
+                });
+              }
+
+              return { aiFeedback: verbalFeedback, bodyLanguage: bodyLanguageAnalysisResult };
             } catch(e) {
-              console.error("AI feedback failed", e);
-              return null;
+              console.error("AI feedback failed for question", index, e);
+              return { aiFeedback: verbalFeedback, bodyLanguage: bodyLanguageAnalysisResult }; // Return partial results
             }
         });
 
         const results = await Promise.all(feedbackPromises);
         const aiFeedbacks = results.map(r => r?.aiFeedback ?? null);
+        const bodyLanguageFeedbacks = results.map(r => r?.bodyLanguage ?? null);
         
-        dispatch({ type: 'FEEDBACK_GENERATED', payload: { feedback: aiFeedbacks, bodyLanguageFeedback: [] } });
+        dispatch({ type: 'FEEDBACK_GENERATED', payload: { feedback: aiFeedbacks, bodyLanguageFeedback: bodyLanguageFeedbacks } });
         router.push(`/interview/results/${state.sessionId}`);
     }, 500); // Give it a moment to update state
 };

@@ -5,7 +5,7 @@ import { useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { CheckCircle2, Home, MessageSquareQuote, RefreshCw, Star, Target, Zap } from 'lucide-react';
+import { CheckCircle2, Home, MessageSquareQuote, RefreshCw, Star, Target, Zap, Smile, Gauge, Eye } from 'lucide-react';
 import { CircularProgress } from '@/components/ui/circular-progress';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -77,6 +77,7 @@ export default function ResultsPage() {
       <Accordion type="single" collapsible className="w-full" defaultValue="item-0">
         {state.questions.map((question, index) => {
           const feedback = state.feedback[index];
+          const bodyLanguageFeedback = state.bodyLanguageFeedback[index];
           const userAnswer = state.userAnswers[index];
 
           return (
@@ -99,23 +100,44 @@ export default function ResultsPage() {
                     </CardContent>
                 </Card>
 
-                {feedback ? (
-                    <div className="space-y-4">
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <FeedbackCard title="Clarity & Conciseness" score={feedback.clarityAndConciseness.score} feedback={feedback.clarityAndConciseness.feedback} icon={Zap} />
-                            <FeedbackCard title="Content Relevance" score={feedback.contentRelevance.score} feedback={feedback.contentRelevance.feedback} icon={Target} />
-                            <FeedbackCard title="STAR Method Usage" score={feedback.starMethodUsage.score} feedback={feedback.starMethodUsage.feedback} icon={Star} />
-                            <FeedbackCard title="Impact & Results" score={feedback.impactAndResults.score} feedback={feedback.impactAndResults.feedback} icon={CheckCircle2} />
-                        </div>
-                        <Separator />
-                         <Card className="bg-transparent border-0 shadow-none">
-                            <CardHeader className="p-0 pb-2">
-                                <CardTitle className="text-base flex items-center gap-2"><MessageSquareQuote className="text-primary"/> Overall Recommendations</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-0"><p className="text-sm text-muted-foreground">{feedback.recommendations}</p></CardContent>
-                        </Card>
+                {feedback && (
+                  <div className="space-y-4">
+                      <h3 className="font-semibold text-lg">Verbal Feedback</h3>
+                      <div className="grid md:grid-cols-2 gap-4">
+                          <FeedbackCard title="Clarity & Conciseness" score={feedback.clarityAndConciseness.score} feedback={feedback.clarityAndConciseness.feedback} icon={Zap} />
+                          <FeedbackCard title="Content Relevance" score={feedback.contentRelevance.score} feedback={feedback.contentRelevance.feedback} icon={Target} />
+                          <FeedbackCard title="STAR Method Usage" score={feedback.starMethodUsage.score} feedback={feedback.starMethodUsage.feedback} icon={Star} />
+                          <FeedbackCard title="Impact & Results" score={feedback.impactAndResults.score} feedback={feedback.impactAndResults.feedback} icon={CheckCircle2} />
+                      </div>
+                      <Separator />
+                       <Card className="bg-transparent border-0 shadow-none">
+                          <CardHeader className="p-0 pb-2">
+                              <CardTitle className="text-base flex items-center gap-2"><MessageSquareQuote className="text-primary"/> Overall Recommendations</CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-0"><p className="text-sm text-muted-foreground">{feedback.recommendations}</p></CardContent>
+                      </Card>
+                  </div>
+                )}
+
+                {bodyLanguageFeedback && (
+                  <div className="space-y-4">
+                    <Separator />
+                    <h3 className="font-semibold text-lg">Body Language Analysis</h3>
+                    <div className="grid md:grid-cols-3 gap-4">
+                       <FeedbackCard title="Confidence" score={bodyLanguageFeedback.confidenceScore} feedback={bodyLanguageFeedback.confidenceFeedback} icon={Smile} />
+                       <FeedbackCard title="Posture" score={bodyLanguageFeedback.postureScore} feedback={bodyLanguageFeedback.postureFeedback} icon={Gauge} />
+                       <FeedbackCard title="Eye Contact" score={bodyLanguageFeedback.eyeContactScore} feedback={bodyLanguageFeedback.eyeContactFeedback} icon={Eye} />
                     </div>
-                ) : <p className="text-muted-foreground text-center py-4">AI feedback could not be generated for this question.</p>}
+                     <Card className="bg-transparent border-0 shadow-none">
+                        <CardHeader className="p-0 pb-2">
+                            <CardTitle className="text-base flex items-center gap-2"><MessageSquareQuote className="text-primary"/> Non-Verbal Recommendations</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0"><p className="text-sm text-muted-foreground">{bodyLanguageFeedback.overallAnalysis}</p></CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {!feedback && !bodyLanguageFeedback && <p className="text-muted-foreground text-center py-4">AI feedback could not be generated for this question.</p>}
               </AccordionContent>
             </AccordionItem>
           )

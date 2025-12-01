@@ -37,8 +37,13 @@ export type AIFeedback = {
 };
 
 export type BodyLanguageFeedback = {
-  bodyLanguageFeedback: string;
+  confidenceScore: number;
+  confidenceFeedback: string;
+  postureScore: number;
+  postureFeedback: string;
+  eyeContactScore: number;
   eyeContactFeedback: string;
+  overallAnalysis: string;
 };
 
 export type InterviewSession = {
