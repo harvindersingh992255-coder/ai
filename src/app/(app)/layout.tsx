@@ -1,4 +1,5 @@
 import { AppLayout } from '@/components/app-layout';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { InterviewProvider } from '@/context/interview-context';
 
 export default function AuthenticatedAppLayout({
@@ -8,7 +9,10 @@ export default function AuthenticatedAppLayout({
 }) {
   return (
     <InterviewProvider>
-      <AppLayout>{children}</AppLayout>
+      <AppLayout>
+        {children}
+        <FirebaseErrorListener />
+      </AppLayout>
     </InterviewProvider>
   );
 }
