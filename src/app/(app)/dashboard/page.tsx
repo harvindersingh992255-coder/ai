@@ -12,13 +12,8 @@ import {
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 import { useUser } from '@/context/user-context';
 
-const chartData = [
-  { month: 'January', score: 75 },
-  { month: 'February', score: 82 },
-  { month: 'March', score: 80 },
-  { month: 'April', score: 88 },
-  { month: 'May', score: 92 },
-  { month: 'June', score: 90 },
+const chartData: any[] = [
+  // Data will be populated dynamically in the future
 ];
 
 const chartConfig = {
@@ -44,8 +39,8 @@ export default function DashboardPage() {
             <History className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">+2 since last week</p>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">No sessions completed yet.</p>
           </CardContent>
         </Card>
         <Card>
@@ -54,8 +49,8 @@ export default function DashboardPage() {
             <LineChart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">88%</div>
-            <p className="text-xs text-muted-foreground">+5% from last month</p>
+            <div className="text-2xl font-bold">0%</div>
+            <p className="text-xs text-muted-foreground">Practice to see your average.</p>
           </CardContent>
         </Card>
         <Card>
@@ -64,8 +59,8 @@ export default function DashboardPage() {
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">95%</div>
-            <p className="text-xs text-muted-foreground">In "Project Management"</p>
+            <div className="text-2xl font-bold">0%</div>
+            <p className="text-xs text-muted-foreground">Aim for the stars!</p>
           </CardContent>
         </Card>
         <Card className="md:col-span-2 lg:col-span-1 bg-primary text-primary-foreground flex flex-col justify-center items-center">
@@ -81,9 +76,10 @@ export default function DashboardPage() {
       <Card>
         <CardHeader>
           <CardTitle>Your Progress</CardTitle>
-          <CardDescription>Performance trend over the last 6 months.</CardDescription>
+          <CardDescription>Your performance trend will appear here after a few sessions.</CardDescription>
         </CardHeader>
         <CardContent>
+        {chartData.length > 0 ? (
           <ChartContainer config={chartConfig} className="h-[200px] w-full">
             <BarChart accessibilityLayer data={chartData}>
               <CartesianGrid vertical={false} />
@@ -101,6 +97,11 @@ export default function DashboardPage() {
               <Bar dataKey="score" fill="var(--color-score)" radius={8} />
             </BarChart>
           </ChartContainer>
+        ) : (
+          <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+            Complete a session to see your progress chart.
+          </div>
+        )}
         </CardContent>
       </Card>
     </div>
