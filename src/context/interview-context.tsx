@@ -46,9 +46,9 @@ function interviewReducer(state: InterviewState, action: Action): InterviewState
     case 'SET_SETTINGS':
       return { ...state, settings: action.payload, status: 'generating_questions' };
     case 'QUESTIONS_GENERATED':
-      return { ...state, questions: action.payload.questions, sessionId: action.payload.sessionId, status: 'in_progress', currentQuestionIndex: 0, userAnswers: [] };
+      return { ...state, questions: action.payload.questions, sessionId: action.payload.sessionId, status: 'in_progress', currentQuestionIndex: 0, userAnswers: [], feedback: [], bodyLanguageFeedback: [] };
     case 'START_INTERVIEW':
-        return { ...state, status: 'in_progress', currentQuestionIndex: 0, userAnswers: [] };
+        return { ...state, status: 'in_progress', currentQuestionIndex: 0, userAnswers: [], feedback: [], bodyLanguageFeedback: [] };
     case 'SUBMIT_ANSWER':
       const newUserAnswers = [...state.userAnswers];
       newUserAnswers[state.currentQuestionIndex] = action.payload;
