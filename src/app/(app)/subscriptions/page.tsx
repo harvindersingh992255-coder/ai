@@ -21,7 +21,6 @@ const plans = [
     features: [
       'Unlimited interview sessions',
       'Advanced AI feedback',
-      'Body language analysis',
       'AI Confidence Coach',
       'Priority support',
     ],

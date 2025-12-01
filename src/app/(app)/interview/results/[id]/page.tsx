@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { CheckCircle2, XCircle, MessageSquareQuote, Eye, PersonStanding, RefreshCw, Home } from 'lucide-react';
+import { CheckCircle2, XCircle, MessageSquareQuote, RefreshCw, Home } from 'lucide-react';
 import { CircularProgress } from '@/components/ui/circular-progress';
 import Link from 'next/link';
 
@@ -14,7 +14,6 @@ export default function ResultsPage() {
   const dispatch = useInterviewDispatch();
   const router = useRouter();
   const params = useParams();
-  const [videoUrls, setVideoUrls] = useState<string[]>([]);
   
   useEffect(() => {
     if (state.status !== 'complete' || params.id !== state.sessionId) {
@@ -22,16 +21,6 @@ export default function ResultsPage() {
     }
   }, [state.status, params.id, state.sessionId, router]);
 
-  useEffect(() => {
-    const urls = state.userAnswers.map(answer => 
-      answer.videoBlob ? URL.createObjectURL(answer.videoBlob) : ''
-    );
-    setVideoUrls(urls);
-    
-    return () => {
-      urls.forEach(url => URL.revokeObjectURL(url));
-    };
-  }, [state.userAnswers]);
 
   const overallScore = useMemo(() => {
     const validScores = state.feedback.filter(f => f?.score).map(f => f!.score);
@@ -73,8 +62,7 @@ export default function ResultsPage() {
       <Accordion type="single" collapsible className="w-full">
         {state.questions.map((question, index) => {
           const feedback = state.feedback[index];
-          const bodyLanguage = state.bodyLanguageFeedback[index];
-          const videoUrl = videoUrls[index];
+          const userAnswer = state.userAnswers[index];
 
           return (
             <AccordionItem value={`item-${index}`} key={index}>
@@ -88,9 +76,16 @@ export default function ResultsPage() {
               </AccordionTrigger>
               <AccordionContent className="space-y-6">
                 <p className="font-semibold text-primary/80">{question}</p>
-                {videoUrl && (
-                  <video src={videoUrl} controls className="w-full rounded-md border" />
-                )}
+                
+                <Card className="bg-muted/50">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-base">Your Answer</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-muted-foreground italic">"{userAnswer?.transcript || 'No answer recorded.'}"</p>
+                    </CardContent>
+                </Card>
+
                 <div className="grid md:grid-cols-2 gap-4">
                     {feedback ? (
                         <>
@@ -114,23 +109,6 @@ export default function ResultsPage() {
                             </Card>
                         </>
                     ) : <p className="text-muted-foreground md:col-span-2">AI feedback could not be generated for this question.</p>}
-
-                    {bodyLanguage && (
-                         <>
-                            <Card>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-base flex items-center gap-2"><PersonStanding className="text-blue-500"/> Body Language</CardTitle>
-                                </CardHeader>
-                                <CardContent><p className="text-sm">{bodyLanguage.bodyLanguageFeedback}</p></CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-base flex items-center gap-2"><Eye className="text-purple-500"/> Eye Contact</CardTitle>
-                                </CardHeader>
-                                <CardContent><p className="text-sm">{bodyLanguage.eyeContactFeedback}</p></CardContent>
-                            </Card>
-                        </>
-                    )}
                 </div>
               </AccordionContent>
             </AccordionItem>

@@ -44,10 +44,10 @@ const prompt = ai.definePrompt({
   Question: {{question}}
   Answer: {{answer}}
 
-  {% if bodyLanguageAnalysis %}
+  {{#if bodyLanguageAnalysis}}
   Here is an analysis of their body language:
   {{bodyLanguageAnalysis}}
-  {% endif %}
+  {{/if}}
 
   Provide feedback according to the following guidelines:
 
@@ -56,8 +56,7 @@ const prompt = ai.definePrompt({
   3.  Point out the weaknesses in the answer.
   4.  Provide specific and actionable recommendations for improvement.
 
-  Format your response as a JSON object conforming to the following schema:
-  ${JSON.stringify(ProvideAiFeedbackOutputSchema.describe(''))}
+  Format your response as a JSON object.
   `,
 });
 

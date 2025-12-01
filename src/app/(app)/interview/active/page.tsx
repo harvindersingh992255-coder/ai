@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { provideAiFeedback } from '@/ai/flows/provide-ai-feedback';
-import { detectBodyLanguage } from '@/ai/flows/detect-body-language';
-import { Mic, MicOff, Video, VideoOff, Loader2, StopCircle } from 'lucide-react';
+import { Mic, MicOff, Loader2, StopCircle, AudioLines } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // SpeechRecognition API might be prefixed
 const SpeechRecognition =
@@ -21,13 +21,10 @@ export default function ActiveInterviewPage() {
   const router = useRouter();
 
   const [isRecording, setIsRecording] = useState(false);
-  const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const [hasMicPermission, setHasMicPermission] = useState(false);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recordedChunksRef = useRef<Blob[]>([]);
   const recognitionRef = useRef<any>(null); // SpeechRecognition instance
 
   useEffect(() => {
@@ -44,20 +41,20 @@ export default function ActiveInterviewPage() {
   useEffect(() => {
     async function setupMedia() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         setMediaStream(stream);
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
+        setHasMicPermission(true);
       } catch (err) {
         console.error("Error accessing media devices.", err);
-        dispatch({ type: 'SET_ERROR', payload: 'Camera and microphone access denied.' });
+        setHasMicPermission(false);
+        dispatch({ type: 'SET_ERROR', payload: 'Microphone access denied.' });
       }
     }
     setupMedia();
 
     return () => {
       mediaStream?.getTracks().forEach(track => track.stop());
+      recognitionRef.current?.stop();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -65,54 +62,46 @@ export default function ActiveInterviewPage() {
   const startRecordingAndListening = () => {
     if (mediaStream && SpeechRecognition) {
       setIsRecording(true);
-      setIsListening(true);
       setTranscript('');
-      recordedChunksRef.current = [];
-
-      mediaRecorderRef.current = new MediaRecorder(mediaStream);
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          recordedChunksRef.current.push(event.data);
-        }
-      };
-      mediaRecorderRef.current.start();
 
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = true;
+      let finalTranscript = '';
       recognitionRef.current.onresult = (event:any) => {
         let interimTranscript = '';
-        let finalTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
+            finalTranscript += event.results[i][0].transcript + ' ';
           } else {
             interimTranscript += event.results[i][0].transcript;
           }
         }
-        setTranscript(transcript + finalTranscript + interimTranscript);
+        setTranscript(finalTranscript + interimTranscript);
+      };
+      recognitionRef.current.onend = () => {
+        // Only submit if we were actually recording
+        if (isRecording) {
+            setIsRecording(false);
+            dispatch({ type: 'SUBMIT_ANSWER', payload: { transcript: finalTranscript, videoBlob: null } });
+        }
       };
       recognitionRef.current.start();
     }
   };
 
   const stopRecordingAndListening = () => {
-    setIsRecording(false);
-    setIsListening(false);
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.onstop = () => {
-        const videoBlob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
-        dispatch({ type: 'SUBMIT_ANSWER', payload: { transcript, videoBlob } });
-      };
-    }
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+        recognitionRef.current.stop();
     }
+    setIsRecording(false);
   };
   
   const handleNext = () => {
-    stopRecordingAndListening();
+    if (isRecording) {
+        stopRecordingAndListening();
+    }
+    
     if (state.currentQuestionIndex < state.questions.length - 1) {
         dispatch({ type: 'NEXT_QUESTION' });
         setTranscript('');
@@ -127,50 +116,34 @@ export default function ActiveInterviewPage() {
     }
     dispatch({ type: 'START_FEEDBACK_GENERATION' });
 
-    const feedbackPromises = state.userAnswers.map(async (answer, index) => {
-        const question = state.questions[index];
-        const settings = state.settings!;
-        
-        let bodyLanguage: any = null;
-        let bodyLanguageAnalysisText = '';
-
-        if(answer.videoBlob) {
-            const reader = new FileReader();
-            const dataUriPromise = new Promise<string>((resolve) => {
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.readAsDataURL(answer.videoBlob!);
-            });
-            const videoDataUri = await dataUriPromise;
+    // Use a timeout to ensure final answer is processed by reducer
+    setTimeout(async () => {
+        const feedbackPromises = state.userAnswers.map(async (answer, index) => {
+            if (!answer || !answer.transcript) return null;
+            const question = state.questions[index];
+            const settings = state.settings!;
+            
             try {
-              bodyLanguage = await detectBodyLanguage({ videoDataUri });
-              bodyLanguageAnalysisText = `Body Language: ${bodyLanguage.bodyLanguageFeedback}. Eye Contact: ${bodyLanguage.eyeContactFeedback}.`;
-            } catch (e) {
-              console.error("Body language detection failed", e)
+              const aiFeedback = await provideAiFeedback({
+                dreamCompany: settings.dreamCompany,
+                industry: settings.industry,
+                jobRole: settings.jobRole,
+                question,
+                answer: answer.transcript,
+              });
+              return { aiFeedback, bodyLanguage: null }; // No body language feedback
+            } catch(e) {
+              console.error("AI feedback failed", e);
+              return null;
             }
-        }
+        });
 
-        try {
-          const aiFeedback = await provideAiFeedback({
-            dreamCompany: settings.dreamCompany,
-            industry: settings.industry,
-            jobRole: settings.jobRole,
-            question,
-            answer: answer.transcript,
-            bodyLanguageAnalysis: bodyLanguageAnalysisText
-          });
-          return { aiFeedback, bodyLanguage };
-        } catch(e) {
-          console.error("AI feedback failed", e);
-          return null;
-        }
-    });
-
-    const results = await Promise.all(feedbackPromises);
-    const aiFeedbacks = results.map(r => r?.aiFeedback ?? null);
-    const bodyLanguageFeedbacks = results.map(r => r?.bodyLanguage ?? null);
-
-    dispatch({ type: 'FEEDBACK_GENERATED', payload: { feedback: aiFeedbacks, bodyLanguageFeedback: bodyLanguageFeedbacks } });
-    router.push(`/interview/results/${state.sessionId}`);
+        const results = await Promise.all(feedbackPromises);
+        const aiFeedbacks = results.map(r => r?.aiFeedback ?? null);
+        
+        dispatch({ type: 'FEEDBACK_GENERATED', payload: { feedback: aiFeedbacks, bodyLanguageFeedback: [] } });
+        router.push(`/interview/results/${state.sessionId}`);
+    }, 500); // Give it a moment to update state
 };
 
   if (state.status === 'generating_feedback') {
@@ -192,12 +165,13 @@ export default function ActiveInterviewPage() {
   }
   
   const currentQuestion = state.questions[state.currentQuestionIndex];
+  const lastAnswer = state.userAnswers[state.currentQuestionIndex]?.transcript;
 
   return (
     <div className="container mx-auto h-full flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold tracking-tight">Question {state.currentQuestionIndex + 1} of {state.questions.length}</h1>
-        <Button variant="destructive" size="sm" onClick={handleEndInterview}>End Interview</Button>
+        <Button variant="destructive" size="sm" onClick={handleEndInterview} disabled={isRecording}>End Interview</Button>
       </div>
       <Progress value={((state.currentQuestionIndex + 1) / state.questions.length) * 100} />
 
@@ -211,22 +185,34 @@ export default function ActiveInterviewPage() {
           </CardContent>
         </Card>
         <div className="flex flex-col gap-4">
-          <div className="relative aspect-video bg-muted rounded-lg overflow-hidden border">
-            <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
-            {!mediaStream && <div className="absolute inset-0 flex items-center justify-center text-muted-foreground"><VideoOff className="w-8 h-8" /></div>}
-          </div>
-          <Card className="flex-1">
+          {!hasMicPermission && (
+            <Alert variant="destructive">
+              <MicOff className="h-4 w-4" />
+              <AlertTitle>Microphone Access Required</AlertTitle>
+              <AlertDescription>
+                Please enable microphone permissions in your browser settings to record your answers.
+              </AlertDescription>
+            </Alert>
+          )}
+          <Card className="flex-1 flex flex-col">
             <CardHeader>
-              <CardTitle>Your Answer</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                Your Answer
+                {isRecording && <AudioLines className="w-5 h-5 text-primary animate-pulse" />}
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground min-h-[60px]">{isRecording ? transcript || "Listening..." : (state.userAnswers[state.currentQuestionIndex]?.transcript || "Press record to start answering.")}</p>
+            <CardContent className="flex-1">
+              <p className="text-sm text-muted-foreground min-h-[120px]">
+                {isRecording 
+                    ? transcript || "Listening..." 
+                    : lastAnswer || "Press record to start answering."}
+              </p>
             </CardContent>
           </Card>
         </div>
       </div>
       <div className="flex justify-center items-center gap-4 py-4">
-        <Button size="lg" onClick={isRecording ? stopRecordingAndListening : startRecordingAndListening} disabled={!mediaStream}>
+        <Button size="lg" onClick={isRecording ? stopRecordingAndListening : startRecordingAndListening} disabled={!hasMicPermission}>
           {isRecording ? <><StopCircle className="mr-2" /> Stop</> : <><Mic className="mr-2" /> Record Answer</>}
         </Button>
         <Button size="lg" variant="outline" onClick={handleNext} disabled={isRecording}>
