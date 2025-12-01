@@ -7,13 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { provideAiFeedback } from '@/ai/flows/provide-ai-feedback';
-import { Mic, MicOff, Loader2, StopCircle, AudioLines } from 'lucide-react';
+import { Mic, MicOff, Loader2, StopCircle, AudioLines, Video, VideoOff } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // SpeechRecognition API might be prefixed
 const SpeechRecognition =
   (typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition));
-
 
 export default function ActiveInterviewPage() {
   const state = useInterviewState();
@@ -24,8 +23,12 @@ export default function ActiveInterviewPage() {
   const [transcript, setTranscript] = useState('');
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [hasMicPermission, setHasMicPermission] = useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = useState(false);
 
   const recognitionRef = useRef<any>(null); // SpeechRecognition instance
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     if (state.status !== 'in_progress') {
@@ -41,13 +44,20 @@ export default function ActiveInterviewPage() {
   useEffect(() => {
     async function setupMedia() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
         setMediaStream(stream);
         setHasMicPermission(true);
+        setHasCameraPermission(true);
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
       } catch (err) {
         console.error("Error accessing media devices.", err);
-        setHasMicPermission(false);
-        dispatch({ type: 'SET_ERROR', payload: 'Microphone access denied.' });
+        if (err instanceof Error && err.name.includes('NotAllowed')) {
+            dispatch({ type: 'SET_ERROR', payload: 'Microphone and camera access denied.' });
+            setHasMicPermission(false);
+            setHasCameraPermission(false);
+        }
       }
     }
     setupMedia();
@@ -55,6 +65,7 @@ export default function ActiveInterviewPage() {
     return () => {
       mediaStream?.getTracks().forEach(track => track.stop());
       recognitionRef.current?.stop();
+      mediaRecorderRef.current?.stop();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -63,7 +74,18 @@ export default function ActiveInterviewPage() {
     if (mediaStream && SpeechRecognition) {
       setIsRecording(true);
       setTranscript('');
+      videoChunksRef.current = [];
 
+      // Start video recording
+      mediaRecorderRef.current = new MediaRecorder(mediaStream);
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          videoChunksRef.current.push(event.data);
+        }
+      };
+      mediaRecorderRef.current.start();
+      
+      // Start speech recognition
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = true;
@@ -79,11 +101,13 @@ export default function ActiveInterviewPage() {
         }
         setTranscript(finalTranscript + interimTranscript);
       };
+
       recognitionRef.current.onend = () => {
-        // Only submit if we were actually recording
+        // Only submit if we were actually recording and this wasn't an accidental stop
         if (isRecording) {
             setIsRecording(false);
-            dispatch({ type: 'SUBMIT_ANSWER', payload: { transcript: finalTranscript, videoBlob: null } });
+            const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
+            dispatch({ type: 'SUBMIT_ANSWER', payload: { transcript: finalTranscript, videoBlob: videoBlob } });
         }
       };
       recognitionRef.current.start();
@@ -93,6 +117,9 @@ export default function ActiveInterviewPage() {
   const stopRecordingAndListening = () => {
     if (recognitionRef.current) {
         recognitionRef.current.stop();
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
     }
     setIsRecording(false);
   };
@@ -131,7 +158,7 @@ export default function ActiveInterviewPage() {
                 question,
                 answer: answer.transcript,
               });
-              return { aiFeedback, bodyLanguage: null }; // No body language feedback
+              return { aiFeedback, bodyLanguage: null }; // No body language feedback yet
             } catch(e) {
               console.error("AI feedback failed", e);
               return null;
@@ -185,34 +212,45 @@ export default function ActiveInterviewPage() {
           </CardContent>
         </Card>
         <div className="flex flex-col gap-4">
-          {!hasMicPermission && (
+          {(!hasMicPermission || !hasCameraPermission) && (
             <Alert variant="destructive">
-              <MicOff className="h-4 w-4" />
-              <AlertTitle>Microphone Access Required</AlertTitle>
+              { !hasCameraPermission ? <VideoOff className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+              <AlertTitle>Permissions Required</AlertTitle>
               <AlertDescription>
-                Please enable microphone permissions in your browser settings to record your answers.
+                Please enable microphone and camera permissions in your browser settings to record your answers.
               </AlertDescription>
             </Alert>
           )}
           <Card className="flex-1 flex flex-col">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Your Answer
-                {isRecording && <AudioLines className="w-5 h-5 text-primary animate-pulse" />}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1">
-              <p className="text-sm text-muted-foreground min-h-[120px]">
-                {isRecording 
-                    ? transcript || "Listening..." 
-                    : lastAnswer || "Press record to start answering."}
-              </p>
-            </CardContent>
+             <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  Your Video
+                  {isRecording && <div className="flex items-center gap-2 text-destructive"><span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span></span> REC</div>}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 flex items-center justify-center bg-secondary/20 rounded-md">
+                 <video ref={videoRef} className="w-full aspect-video rounded-md" autoPlay muted />
+              </CardContent>
           </Card>
         </div>
       </div>
+      <Card className="mt-4">
+         <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              Your Answer
+              {isRecording && <AudioLines className="w-5 h-5 text-primary animate-pulse" />}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground min-h-[60px]">
+              {isRecording 
+                  ? transcript || "Listening..." 
+                  : lastAnswer || "Press record to start answering."}
+            </p>
+          </CardContent>
+      </Card>
       <div className="flex justify-center items-center gap-4 py-4">
-        <Button size="lg" onClick={isRecording ? stopRecordingAndListening : startRecordingAndListening} disabled={!hasMicPermission}>
+        <Button size="lg" onClick={isRecording ? stopRecordingAndListening : startRecordingAndListening} disabled={!hasMicPermission || !hasCameraPermission}>
           {isRecording ? <><StopCircle className="mr-2" /> Stop</> : <><Mic className="mr-2" /> Record Answer</>}
         </Button>
         <Button size="lg" variant="outline" onClick={handleNext} disabled={isRecording}>
