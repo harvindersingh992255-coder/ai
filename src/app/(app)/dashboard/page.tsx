@@ -10,6 +10,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
+import { useUser } from '@/context/user-context';
 
 const chartData = [
   { month: 'January', score: 75 },
@@ -28,10 +29,11 @@ const chartConfig = {
 };
 
 export default function DashboardPage() {
+  const { user } = useUser();
   return (
     <div className="container mx-auto space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Welcome back, John!</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user.name}!</h1>
         <p className="text-muted-foreground">Ready to ace your next interview? Let&apos;s get started.</p>
       </div>
 

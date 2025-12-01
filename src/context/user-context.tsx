@@ -4,8 +4,8 @@ import { createContext, useContext, useState, ReactNode, Dispatch, SetStateActio
 import type { Plan, User } from '@/lib/types';
 
 const defaultUser: User = {
-    name: 'John Doe',
-    avatarUrl: 'https://picsum.photos/seed/1/100/100',
+    name: 'Guest User',
+    avatarUrl: '',
 };
 
 type UserContextType = {
