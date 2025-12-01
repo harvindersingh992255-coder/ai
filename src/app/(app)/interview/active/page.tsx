@@ -30,8 +30,8 @@ export default function ActiveInterviewPage() {
   const [transcript, setTranscript] = useState('');
   const [writtenAnswer, setWrittenAnswer] = useState('');
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
-  const [hasMicPermission, setHasMicPermission] = useState(false);
-  const [hasCameraPermission, setHasCameraPermission] = useState(false);
+  const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
 
   const recognitionRef = useRef<any>(null); // SpeechRecognition instance
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -69,10 +69,10 @@ export default function ActiveInterviewPage() {
         }
       } catch (err) {
         console.error("Error accessing media devices.", err);
+        setHasMicPermission(false);
+        setHasCameraPermission(false);
         if (err instanceof Error && err.name.includes('NotAllowed')) {
-            dispatch({ type: 'SET_ERROR', payload: 'Microphone and camera access denied.' });
-            setHasMicPermission(false);
-            setHasCameraPermission(false);
+            dispatch({ type: 'SET_ERROR', payload: 'Microphone and camera access denied. Please enable them in your browser settings.' });
         }
       }
     }
@@ -244,6 +244,8 @@ export default function ActiveInterviewPage() {
   const currentQuestion = state.questions[state.currentQuestionIndex];
   const lastAnswer = state.userAnswers[state.currentQuestionIndex]?.transcript;
 
+  const permissionsGranted = hasMicPermission && (enableVideo ? hasCameraPermission : true);
+
   return (
     <div className="container mx-auto h-full flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -262,12 +264,12 @@ export default function ActiveInterviewPage() {
           </CardContent>
         </Card>
         <div className="flex flex-col gap-4">
-          {(!hasMicPermission || (enableVideo && !hasCameraPermission)) && (
+          {hasMicPermission === false && (
             <Alert variant="destructive">
-              { enableVideo && !hasCameraPermission ? <VideoOff className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+              { enableVideo && hasCameraPermission === false ? <VideoOff className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
               <AlertTitle>Permissions Required</AlertTitle>
               <AlertDescription>
-                Please enable microphone {enableVideo && 'and camera'} permissions in your browser settings to record your answers.
+                Please enable microphone {enableVideo && 'and camera'} access in your browser settings to record your answers. You may need to reload the page after granting permissions.
               </AlertDescription>
             </Alert>
           )}
@@ -292,7 +294,7 @@ export default function ActiveInterviewPage() {
               <div className="flex justify-between items-center">
                 <CardTitle>Your Answer</CardTitle>
                 <TabsList>
-                  <TabsTrigger value="record">Record</TabsTrigger>
+                  <TabsTrigger value="record" disabled={!permissionsGranted}>Record</TabsTrigger>
                   <TabsTrigger value="write">Write</TabsTrigger>
                 </TabsList>
               </div>
@@ -300,7 +302,7 @@ export default function ActiveInterviewPage() {
           <TabsContent value="record">
             <CardContent>
                <div className="flex items-center gap-4">
-                 <Button size="lg" onClick={isRecording ? stopRecordingAndListening : startRecordingAndListening} disabled={!hasMicPermission || (enableVideo && !hasCameraPermission)}>
+                 <Button size="lg" onClick={isRecording ? stopRecordingAndListening : startRecordingAndListening} disabled={!permissionsGranted}>
                     {isRecording ? <><StopCircle className="mr-2" /> Stop</> : <><Mic className="mr-2" /> Record Answer</>}
                   </Button>
                   <div className="text-sm text-muted-foreground min-h-[40px] flex-1 flex items-center">
@@ -321,6 +323,7 @@ export default function ActiveInterviewPage() {
                   value={writtenAnswer}
                   onChange={(e) => setWrittenAnswer(e.target.value)}
                   className="min-h-[100px]"
+                  disabled={isRecording}
                 />
               </CardContent>
           </TabsContent>
