@@ -1,35 +1,18 @@
-import { questionsDB } from "@/data/questions";
-
 const onSubmit = async (data: InterviewSettings) => {
   setIsLoading(true);
 
-  try {
-    // Select questions according to jobRole
-    const role = data.jobRole || "Software Engineer";
+  const demoQuestions = [
+    "Tell me about yourself.",
+    "Why should we hire you?",
+    "What are your strengths?",
+    "What are your weaknesses?",
+    "Where do you see yourself in 5 years?",
+    "Tell me about a challenge you faced and how you handled it."
+  ];
 
-    const availableQuestions = questionsDB[role] || questionsDB["Software Engineer"];
+  // Encode questions into the URL
+  const q = encodeURIComponent(JSON.stringify(demoQuestions));
 
-    const selectedQuestions = availableQuestions.slice(0, data.numQuestions);
-
-    if (selectedQuestions.length === 0) {
-      dispatch({ type: "SET_ERROR", payload: "No questions available for this role." });
-      setIsLoading(false);
-      return;
-    }
-
-    const sessionId = `session_${Date.now()}`;
-
-    dispatch({
-      type: "QUESTIONS_GENERATED",
-      payload: { questions: selectedQuestions, sessionId }
-    });
-
-    router.push("/interview/active");
-  } catch (error) {
-    console.error(error);
-    dispatch({ type: "SET_ERROR", payload: "Something went wrong." });
-  } finally {
-    setIsLoading(false);
-  }
+  router.push(`/interview/active?q=${q}`);
 };
 
